@@ -38,7 +38,9 @@ Five surprises:
 1. <one line each, with the key file>
 ...
 
-Checks: wired? <result in one line>. saved? <result in one line>.
+Checks: wired? <result in one line>. saved? <result in one line>. effects? <mismatches in one line>.
+
+Contract clauses nothing enforces (<n>): <the top two>.
 
 Rules decided by Claude, not the owner: <list>.
 

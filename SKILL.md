@@ -8,7 +8,7 @@ description: Build a comprehension pack for a repository, a single evidence-back
 AI-assisted delivery produces working systems faster than their owner can absorb them. Reading every line doesn't scale and more tests don't help if nobody knows what the tests prove. A comprehension pack is the alternative: one document, verified against the code, that answers four questions about a repository.
 
 1. **What should it do?** The system map, the data model and the rules, each rule tagged with *who decided it*.
-2. **How do we know it does it?** Whether each tested rule is actually *called*, and whether what users enter is actually *saved*.
+2. **How do we know it does it?** Whether each rule's contract is enforced, whether each tested rule is actually *called*, and whether each action does what it should to the outside world, above all whether what users enter is actually *saved*.
 3. **Where will it break?** Surprises, request walk-throughs, the deploy, and a symptom → cause → where-to-look table.
 4. **How would we fix it?** Owner questions, in-flight branches, and ordered next steps.
 
@@ -22,7 +22,7 @@ Two modes:
 
 ### 1. Survey (main session, about 10 minutes)
 
-- Read the repository's `README.md` and `CLAUDE.md` (or equivalent) and the newest existing pack in `docs/comprehension/` if there is one. A revision starts from the old pack plus every explain-back record in `docs/comprehension/explain-back/`: weak spots recorded there get expanded in the new pack.
+- Read the repository's `README.md` and `CLAUDE.md` (or equivalent) and the newest existing pack in `docs/comprehension/` if there is one. A revision starts from the old pack plus every explain-back record in `docs/comprehension/explain-back/`: weak spots recorded there get expanded in the new pack. A revision also gets a semantic diff against the old pack (step 5).
 - Pin the commit: default branch, short SHA, version if the repository carries one. `git fetch` first. If the checkout sits on another branch, say so and read the default branch's content (`git show origin/<default>:<path>` or confirm the code is identical with `git diff --stat HEAD origin/<default>`). Don't switch branches in someone's checkout.
 - List in-flight work: open pull requests (`gh pr list`), branches ahead of the default branch with `git rev-list --left-right --count`, `git diff --shortstat`, and worktrees (`git worktree list`). You note these in §8; you don't read them all.
 - Map the layout (`git ls-files | sed 's|/.*||' | sort | uniq -c`) and decide how to split the reading.
@@ -40,12 +40,15 @@ Launch three or four reader subagents **in one message**, each owning one area, 
 
 Use the brief in [references/reader-briefs.md](references/reader-briefs.md). Its non-negotiables: read whole files, cite every claim with a repository-root-relative `path:line`, mark each claim VERIFIED or INFERRED, run the two checks below, tag each rule's source, and modify nothing.
 
-### 3. The two checks that earn their keep
+### 3. The checks that earn their keep
 
-Every pack runs both, and reports the result even when it's good news.
+Every pack runs all three, and reports the result even when it's good news.
 
 - **Wired?** For every rule, policy or function that has tests, find its non-test callers. A tested rule with no caller is a specification that nothing runs, and whatever users actually see comes from somewhere else (often untested). Search the whole source tree, not only the obvious caller, and check dependency injection registrations and reflection-based discovery before declaring something unwired.
 - **Saved?** For every form, action or input a user can submit, trace it to a durable write (`SaveChanges`, a file, an external store) or show that it isn't one. Watch for in-memory singletons, static lists, caches loaded once at start-up, and "save" buttons that only mutate an object.
+- **Effects?** Saved? is the most important case of a wider check. For every entry point (a page handler, an API endpoint, a job, a message consumer), list the effects it *should* have and the effects the code *does* have: reads and writes to durable storage (`db.write(Orders)`, a file), calls out (`net(PaymentGateway)`, an email) and writes to shared in-memory state (`state.write(singleton cache)`). Report mismatches in both directions: a "Save" with no durable write, and a read that quietly writes (a `get` that updates a cache, a page load that stamps a "last seen" column, a "preview" that sends an email). Use the effect vocabulary in [references/pack-template.md](references/pack-template.md) §6 so that packs compare across revisions.
+
+**Contracts.** Write each rule in §4 as a contract, the idea behind Design by Contract (DbC): what must be true before it runs (`requires`), what it guarantees afterwards (`ensures`) and what always holds for an entity (`invariant`). Then say what enforces each clause: a type, a guard clause, a database constraint, a test, or nothing. The clause nobody wrote is often the finding: a `change_email` that `ensures email == new` but not `email_verified == false` lets a changed address stay verified. A missing or unenforced clause becomes a gap under §4 or an owner question in §5. C# and most mainstream languages check neither contracts nor effects at compile time, so in a pack they are documented claims, marked VERIFIED or INFERRED like everything else, not compiler guarantees. The contracts-and-effects idea comes from Gavin Ray, ["Design by Contract and effects are essential for LLM-generated code"](https://gavinray97.github.io/blog/design-by-contract-and-effects-for-llms) (2026-08-02).
 
 Two cheaper checks are worth the minutes, because each found a headline on the second run:
 - **Does the default branch still build?** Look at the last CI run on the default branch (`gh run list`) and, if nothing has deployed recently, run the restore the CI runs (for .NET, `dotnet restore --locked-mode`). Locked restores with NuGet audit as errors break silently when a new advisory lands, and the live site then can't be patched.
@@ -55,7 +58,8 @@ Two cheaper checks are worth the minutes, because each found a headline on the s
 
 Readers are fast but wrong often enough to matter. Before writing, open the cited lines yourself for:
 - every headline claim (anything that goes into §2 "surprises" or §10 "next steps");
-- every "No" in a Wired? column and every "not saved" finding;
+- every "No" in a Wired? column, every "not saved" finding and every effects mismatch;
+- every contract clause enforced by nothing, and every clause marked missing;
 - anything two readers disagree on.
 
 Drop or soften what doesn't survive. Say "inference" where you couldn't confirm. Budget about a third of the session for this; it's where the value is.
@@ -72,6 +76,8 @@ Read the `SHOW` lines, not just the totals. Readers' line numbers in JSON, YAML 
 
 Path: `docs/comprehension/YYYY-MM-DD-comprehension-pass.md` in the target repository (today's date, ISO format). Follow [references/pack-template.md](references/pack-template.md): ten sections, in order. If you already have a good pack in another repository, copy its structure and tone, but never use a pack from a confidential repository as a model for another client's work.
 
+**A revision** writes a new dated pack and leaves the old one in place. Its header carries a **Changed since the last pack** block, the semantic diff: rules whose contract weakened, gained or lost a clause, or lost what enforced it; effects added to or removed from entry points; rules that became wired or unwired; surprises fixed and new ones. Build it from the old pack's tables and `git diff <old SHA>..<new SHA>` over the files they cite, not from memory. Weakened contracts and new effects go first, because those are the changes a green build hides.
+
 Leave the pack **uncommitted** unless the owner says otherwise: the owner reads it first, and that reading is the point.
 
 ### 6. File it into MemPalace
@@ -80,7 +86,7 @@ Read [references/mempalace.md](references/mempalace.md). In short: the scheduled
 
 ### 7. Report
 
-Give the owner: the pack's path, the five surprises in one line each, the wired/saved results, the number of owner questions, and what to read first. Then offer an explain-back session.
+Give the owner: the pack's path, the five surprises in one line each, the wired, saved and effects results, the number of contract clauses nothing enforces, the number of owner questions, the top lines of the semantic diff for a revision, and what to read first. Then offer an explain-back session.
 
 ## The reference contract
 
@@ -126,8 +132,10 @@ A typical case: a client's codebase that must never reach a clean-room rebuild o
 
 - [ ] Commit pinned in the header; branch situation stated.
 - [ ] All ten sections present; §2 has exactly five surprises, each verified by you.
-- [ ] Every rule in §4 has plain English, a source and a Wired? answer with evidence.
-- [ ] The Saved? result is stated explicitly somewhere in §2 or §3.
+- [ ] Every rule in §4 has plain English, a contract with what enforces each clause, a source and a Wired? answer with evidence.
+- [ ] The Saved? and Effects? results are stated explicitly in §2 or §3, and every §6 walk-through ends with its effects.
+- [ ] §3 lists the important entities' invariants and what enforces each.
+- [ ] A revision carries the Changed since the last pack block, weakened contracts and new effects first.
 - [ ] `scripts/check_refs.py --show` reports 0 hard problems and every `SHOW` line lands on the code its sentence describes.
 - [ ] Abbreviations expanded on first use; dates ISO; no passive or "would be" hedges.
 - [ ] Self-quiz answers in `<details>` with a blank line after `</summary>`, each citing evidence.

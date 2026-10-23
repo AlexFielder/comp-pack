@@ -3,9 +3,11 @@
 A [Claude Code](https://claude.com/claude-code) skill that builds a **comprehension pack** for a repository: one evidence-backed document that lets the owner answer four questions without asking Claude.
 
 1. **What should it do?** The system map, the data model and the rules, each rule tagged with who decided it (the owner, a published standard, earlier code, or Claude's own assumption).
-2. **How do we know it does it?** Whether each tested rule is actually called, and whether what users enter is actually saved.
+2. **How do we know it does it?** Whether each rule's contract (`requires` / `ensures` / `invariant`) is enforced by anything, whether each tested rule is actually called, and whether each action has the effects it should: above all, whether what users enter is actually saved, and whether a "read" quietly writes.
 3. **Where will it break?** Five surprises, request walk-throughs, the deploy, and a symptom → cause → where-to-look table.
 4. **How would we fix it?** Owner questions, in-flight branches and ordered next steps.
+
+A revised pack opens with a semantic diff against the previous one: weakened contracts, new effects and lost enforcement first, because those are the changes a green build hides. The contracts-and-effects approach comes from Gavin Ray's post [Design by Contract and effects are essential for LLM-generated code](https://gavinray97.github.io/blog/design-by-contract-and-effects-for-llms).
 
 It also runs **explain-back** sessions, in which the owner proves that understanding through a quiz or a narrated walk-through, and records weak spots for the next revision of the pack.
 

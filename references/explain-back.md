@@ -7,7 +7,7 @@ Be a coach, not an examiner. The goal is that the owner leaves knowing more than
 ## Set-up
 
 1. Find the newest pack in `docs/comprehension/` and every earlier record in `docs/comprehension/explain-back/`. If there's no pack, say so and offer to build one first; explain-back without a pack turns into Claude lecturing.
-2. Check drift: `git log --oneline <pack SHA>..origin/<default> -- <paths the pack cites most>`. If cited code has changed, say which sections may be stale before you start, and verify any answer that depends on them against the current code.
+2. Check drift: `git log --oneline <pack SHA>..origin/<default> -- <paths the pack cites most>`. If cited code has changed, say which sections may be stale before you start, and verify any answer that depends on them against the current code. Look first at the files behind §4's contracts and §6's effects: a weakened contract or a new effect since the pack makes a pack-correct answer wrong.
 3. Ask which mode, unless the owner already said:
    - **Quiz** (about 30-45 minutes): ten questions.
    - **Walk-through** (about 20-30 minutes per flow): the owner narrates a named flow end to end.
@@ -19,7 +19,7 @@ Be a coach, not an examiner. The goal is that the owner leaves knowing more than
 1. Weak spots recorded in earlier sessions that haven't been answered Solid since (up to four).
 2. The pack's §9 self-quiz questions not asked in the last session, but **reworded as a fresh scenario** so a memorised answer doesn't pass. ("A manager confirms an item and the pool recycles" becomes "Two users edit the same project and then a deploy runs: what survives?")
 3. One or two §5 owner questions, framed as "What does the code do today about X, and who has to decide it?"
-4. At least one new question from §2 or §4 that the pack didn't quiz.
+4. At least one new question from §2 or §4 that the pack didn't quiz, and one on a contract or an effect: "What does `X` guarantee afterwards, and what enforces it?" or "Which of these three actions writes to the database, and which only looks as if it does?"
 
 Cover at least three of the four questions (what, how we know, where it breaks, how to fix).
 
@@ -42,7 +42,7 @@ Ask "how do you know?" when an answer is right but bare; a correct guess isn't u
 1. The owner names a flow ("a tenant submits a job and downloads the DXF") or picks one of the pack's §6 walk-throughs.
 2. They narrate it hop by hop, from the user's action to the durable write and back. Don't interrupt mid-hop; let them finish each hop.
 3. After each hop, confirm or correct with a link. Note hops they skip ("you went from the form straight to the database; what checks the tenant in between?").
-4. End with the two checks applied to their flow: **Is the rule they described actually called here? Is the thing they described actually saved?**
+4. End with the checks applied to their flow: **Is the rule they described actually called here? Is the thing they described actually saved? What else does the flow touch that they didn't mention?** Compare their list with the pack's **Effects:** line for that walk-through.
 5. Score the flow: Solid if every hop was right and none skipped, Partial if one or two hops were wrong or missing, Missed if the shape was wrong.
 
 ## Recording the session

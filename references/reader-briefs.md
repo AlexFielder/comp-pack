@@ -32,14 +32,16 @@ METHOD (mandatory):
 - Mark each claim VERIFIED (you read the line) or INFERRED.
 - CHECK 1 "wired?": for every rule/policy/function that has tests, search `src/` (excluding tests) for real callers, including DI registration and reflection-based discovery. Report wired YES with caller path:line, or NO. Tested-but-uncalled logic is the most valuable finding.
 - CHECK 2 "saved?": for every input or action a user can submit in your area, trace it to where it is persisted (SaveChanges, file write, external store) or report that it is not persisted / only in memory.
+- CHECK 3 "effects?": for every entry point in your area (handler, endpoint, job, message consumer), list the effects it has: db.read/db.write(<table>), fs.read/fs.write(<path>), net(<service>), email, queue, state.write(<in-memory thing>), clock/random. Flag effects its name doesn't suggest (a read or "get" that writes) and expected effects that are missing (a save with no db.write).
+- CONTRACTS: for each rule, write requires / ensures / invariant clauses and what enforces each (type, guard, DB constraint, test, nothing). Add the obvious clause nobody wrote, marked MISSING.
 - For each rule give its SOURCE: owner decision (cite doc/commit/comment), published standard (cite clause), prototype or upstream port (cite), or Claude's assumption (comment says assume/provisional/TODO, or no source at all).
 - Do not modify any file. Read-only git/grep/gh commands only. A read-only live check that settles a claim (a Seq query, `gh api` for environment protection or the plan) is welcome; say that it was live.
 
 RETURN (markdown, <length> words):
 1. Files read (list).
 2. <Area-specific map: components, entities, pipeline, or modules, with paths.>
-3. Rules table: rule | plain English | source | wired? (caller) | tested? (test path).
-4. Persistence findings (CHECK 2).
+3. Rules table: rule | plain English | contract (clauses + enforced by) | source | wired? (caller) | tested? (test path).
+4. Persistence findings (CHECK 2) and an effects table (CHECK 3): entry point | expected effects | actual effects | mismatch.
 5. Surprises ranked by importance, each with evidence.
 6. Gaps: important behaviour with no test, contradictions between code, comments and docs, dead code.
 7. Questions only the owner could answer.
@@ -47,12 +49,13 @@ RETURN (markdown, <length> words):
 
 ## Area-specific asks that paid off
 
-- **Data and storage:** "List every write path (SaveChanges / ExecuteUpdate / file write) with path:line and its caller. Identify user-visible state held only in memory, a cache or a static, and what an app-pool recycle loses." Ask for a Mermaid `erDiagram` of verified relationships only.
+- **Data and storage:** "List every write path (SaveChanges / ExecuteUpdate / file write) with path:line and its caller. Identify user-visible state held only in memory, a cache or a static, and what an app-pool recycle loses." Ask for a Mermaid `erDiagram` of verified relationships only, and for each important entity's invariants with what enforces each (database constraint, constructor or setter, validator, nothing).
 - **Runtime, auth and deploy:** "Trace three representative requests end to end (route → middleware → auth → handler → data → response) with path:line at each hop." "Build a where-it-breaks table: symptom | likely cause | where to look." Ask about deploy guards, backups of files *and* database, secrets, app-pool always-on and idle timeout, and where migrations run.
 - **Multi-tenant systems:** "How is a request's tenant determined, and does every page or API that reads tenant data check it? Look for insecure direct object references."
 - **Runners and workers:** "How is the executor chosen, what happens when the external engine hangs or crashes, how does the worker authenticate and where does its secret live, does it validate job inputs such as paths and output names?"
 - **In-flight branches that touch your area:** "Describe what is wrong on the default branch that branch X fixes (`git diff origin/<default>...origin/<branch>`)."
+- **Revisions:** paste the old pack's rules and effects rows for the reader's area and ask: "For each row, report what changed since <old SHA>: contract clauses weakened, added or removed, enforcement lost, effects added or removed, callers gained or lost."
 
 ## Handling reader output
 
-Treat each report as leads, not facts. Readers misread line numbers, miss DI registrations, and occasionally report a test helper as a production caller. The main session verifies every claim that reaches §2, every "No" under Wired?, every "not saved", and every conflict between readers, by opening the lines itself.
+Treat each report as leads, not facts. Readers misread line numbers, miss DI registrations, and occasionally report a test helper as a production caller. The main session verifies every claim that reaches §2, every "No" under Wired?, every "not saved", every effects mismatch, every clause enforced by nothing or marked MISSING, and every conflict between readers, by opening the lines itself.

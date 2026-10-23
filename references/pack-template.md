@@ -20,6 +20,26 @@ This pack exists so that <owner> can answer four questions about <system> withou
 
 Add one sentence of disambiguation if the name collides with something else (a product and an unrelated venture that share a name, say).
 
+### Revisions: the semantic diff
+
+A revision adds this block straight after the header (see SKILL.md, step 5):
+
+```markdown
+## Changed since the last pack
+
+Previous pack: `docs/comprehension/YYYY-MM-DD-comprehension-pass.md` at `<old SHA>`. Explain-back sessions absorbed: <dates, or none>.
+
+| Change | Rule or entry point | Before | Now | Evidence |
+|---|---|---|---|---|
+| Contract weakened | `Ledger.Append` | ensures count == old(count) + 1 (test) | no length guarantee | <link> |
+| New effect | `CheckoutPage.OnPost` | db.write(Orders) | + net(PaymentGateway), retried 3 times | <link> |
+| Enforcement lost | `Order` invariant: at least one line | database constraint | nothing | <link> |
+| Now wired | `DiscountRule` | no caller | called from checkout | <link> |
+| Surprise fixed | old §2.3 "Nothing is saved" | | | <link> |
+```
+
+Order the rows: weakened contracts, new effects, lost enforcement, then everything else. Links follow the reference contract as everywhere else.
+
 ## 1. The system on one page
 
 - One Mermaid `flowchart LR`: users, edge (Cloudflare, IIS, Vercel), processes, identity provider, data stores, external services, and the code areas that matter. Label edges with what crosses them. Mark the surprising edges (a dotted line for "only at start-up", a note for "not called").
@@ -41,13 +61,15 @@ Good surprises are things a competent person who had skimmed the README would ge
 - **Shape:** how many entities, how relationships work (navigation properties or string ids), delete behaviour.
 - A table: area | entities | real-world meaning.
 - A Mermaid `erDiagram` of the relationships a reader verified (not every entity; the ones that carry meaning).
+- **Invariants:** what must always hold for each important entity, as `invariant` clauses (`email_verified implies email != ""`, `stock >= 0`, `an order has at least one line`), each with what enforces it: a database constraint, the entity's constructor or setters, a validator, a test, or **nothing**. An invariant that only the user interface enforces breaks the first time a job, an import or an API writes the row.
 - **Things to know before changing the model:** conventions that silently change columns, enum storage, temporal or history tables, unique indexes and check constraints, how seeding decides to run, where and when migrations run and what a failed one does, how to apply a script by hand.
 
 ## 4. The rules catalogue
 
-One table. Columns: **Rule** (name plus link) | **In plain English** | **Source** | **Wired?**
+One table. Columns: **Rule** (name plus link) | **In plain English** | **Contract** | **Source** | **Wired?**
 
 - **Plain English:** what the rule decides, with the numbers, in words the owner would use. Use `<br/>` for short numbered steps inside a cell.
+- **Contract:** the rule as short `requires` / `ensures` / `invariant` clauses in pseudo-code, one per line with `<br/>` (`requires qty > 0 (guard)`<br/>`ensures stock == old(stock) - qty (test)`). Follow each clause with what enforces it in brackets: (type), (guard), (DB constraint), (test) or **(nothing)**. Add the clause the owner would expect and nobody wrote, marked **(missing)**: that is where generated code drifts. A rule with no meaningful contract (a lookup table, a constant) says so in a few words.
 - **Source:** one of
   - *Owner's decision* (cite the answer, document, meeting or commit),
   - *Published standard* (cite the clause as the code or document states it),
@@ -56,7 +78,7 @@ One table. Columns: **Rule** (name plus link) | **In plain English** | **Source*
   Mixed sources are fine: "Bands: owner. Weights: prototype."
 - **Wired?** **No**, or Yes with the caller's link. "Yes" without a caller is not allowed.
 
-After the table, **gaps the tests don't cover**: edge cases where the rule's behaviour is undecided or surprising and no test pins it. These usually become owner questions.
+After the table, **gaps the tests don't cover**: edge cases where the rule's behaviour is undecided or surprising and no test pins it. These usually become owner questions. Every **(nothing)** and **(missing)** clause appears here or in §5.
 
 ## 5. Questions only the owner can answer
 
@@ -68,7 +90,9 @@ When the product owner and the operator differ (a client owns the rules and you 
 
 Pick three that together touch the most important code: usually one that writes, one that reads something computed, and one that crosses a trust boundary (sign-in, an external runner, a webhook). Open with one short paragraph on how every interaction travels (HTTP posts, SignalR circuit, long-poll, queue).
 
-Each walk-through is a numbered list of hops; each hop has a bold label, what happens, and a link. End each with **Saved:** yes or no, and where.
+Each walk-through is a numbered list of hops; each hop has a bold label, what happens, and a link. End each with **Effects:**, every effect the request has, and **Saved:** yes or no, and where. Flag any effect a user wouldn't expect from the action's name.
+
+Effect vocabulary (use these words in walk-throughs, the Effects? check and the semantic diff, so packs compare across revisions): `db.read(<table>)`, `db.write(<table>)`, `fs.read(<path>)`, `fs.write(<path>)`, `net(<service>)`, `email(<recipient>)`, `queue(<name>)`, `state.write(<in-memory thing>)`, plus `clock` and `random` for nondeterminism a test has to pin.
 
 ## 7. Deployment, and where it breaks
 
@@ -91,7 +115,7 @@ It's lost. ... ([src/...](../../src/...#L128-L129))
 </details>
 ```
 
-The blank line after `</summary>` matters: without it GitHub doesn't render the Markdown inside. Write questions as scenarios ("X happens; what does the user see?"), not definitions. Cover §2 (at least three), the data model, a walk-through, the deploy and one rule edge case. Every answer cites evidence. Explain-back sessions draw on these.
+The blank line after `</summary>` matters: without it GitHub doesn't render the Markdown inside. Write questions as scenarios ("X happens; what does the user see?"), not definitions. Cover §2 (at least three), the data model, a walk-through, the deploy, one rule edge case, and one contract or effect ("What does `X` guarantee afterwards, and what enforces it?"). Every answer cites evidence. Explain-back sessions draw on these.
 
 ## 10. Next steps
 

@@ -62,7 +62,7 @@ Pack: [docs/comprehension/YYYY-MM-DD-comprehension-pass.md](../YYYY-MM-DD-compre
 | 2 | ... | Missed | <two sentences> ([src/...](../../../src/...#L..)) |
 
 ## Weak spots
-- <Topic>: <what the owner believed versus what is true>. Pack section: §<n>. Suggested pack change: <expand, add a diagram, add a walk-through, add a quiz question>.
+- <Topic>: <what the owner believed versus what is true>. Pack section: §<n> (and the S- or OQ- ID, if one applies). Suggested pack change: <expand, add a diagram, add a walk-through, add a quiz question>.
 
 ## Pack defects
 - <Where the pack was wrong or stale, with the correct evidence.>

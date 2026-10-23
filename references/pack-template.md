@@ -16,6 +16,8 @@ Every section answers one of the four questions (what should it do; how do we kn
 YYYY-MM-DD · `<default branch>` at `<short SHA>` (version <x> if any) · <one clause on the checkout or branch situation>
 
 This pack exists so that <owner> can answer four questions about <system> without asking Claude: **what should it do, how do we know it does that, where will it break, and how would we fix it.** Read it in order; it takes about <N> hours with the code open beside it. Every reference is a link whose text is the path from the repository root, pinned to the commit above.
+
+**Not covered:** <what this pack didn't read and why: generated code, branches listed in §8 but not read, areas cut for time, live configuration or production data not checked>.
 ```
 
 Add one sentence of disambiguation if the name collides with something else (a product and an unrelated venture that share a name, say).
@@ -35,7 +37,8 @@ Previous pack: `docs/comprehension/YYYY-MM-DD-comprehension-pass.md` at `<old SH
 | New effect | `CheckoutPage.OnPost` | db.write(Orders) | + net(PaymentGateway), retried 3 times | <link> |
 | Enforcement lost | `Order` invariant: at least one line | database constraint | nothing | <link> |
 | Now wired | `DiscountRule` | no caller | called from checkout | <link> |
-| Surprise fixed | old §2.3 "Nothing is saved" | | | <link> |
+| Surprise fixed | S3 "Nothing is saved" | | | <link> |
+| Question answered | OQ-004 | Claude's assumption: 30-day expiry | Owner's decision (2026-11-02): 90 days | owner-questions.md |
 ```
 
 Order the rows: weakened contracts, new effects, lost enforcement, then everything else. Links follow the reference contract as everywhere else.
@@ -49,12 +52,12 @@ Order the rows: weakened contracts, new effects, lost enforcement, then everythi
 
 Exactly five, ranked by consequence. These are the reason the pack exists; each must be verified by the main session, not just a reader.
 
-For each, a `###` heading that states the surprise as a plain sentence ("Nothing a user enters is saved"), then bullets:
+For each, a `###` heading with its stable ID and the surprise as a plain sentence ("### S1. Nothing a user enters is saved"), then bullets:
 - **What happens:** the mechanism, with links.
 - **Consequences:** what a user or operator experiences.
 - **Plan of record** (if any): where the fix is planned, or "none".
 
-Good surprises are things a competent person who had skimmed the README would get wrong. Always consider the results of the two checks (wired? saved?), access control as actually enforced versus as described, values that look calculated but are seeded or hard-coded, missing logging, and deploy steps that lose data. If the two checks come back clean, say so in a sentence at the top of this section; clean is a finding too.
+Good surprises are things a competent person who had skimmed the README would get wrong. Always consider the results of the checks (wired? saved? effects?), access control as actually enforced versus as described, values that look calculated but are seeded or hard-coded, missing logging, and deploy steps that lose data. If the checks come back clean, say so at the top of this section and name what was checked; clean is a finding too, and an all-clear with no evidence is worth nothing.
 
 ## 3. The data model
 
@@ -82,7 +85,7 @@ After the table, **gaps the tests don't cover**: edge cases where the rule's beh
 
 ## 5. Questions only the owner can answer
 
-Numbered, each one sentence of context plus the question, each traceable to §4 or §2. Name the owner ("Questions only Sam can answer", "Questions for the client"). Order by how much of the system each answer unblocks. Ten to fifteen is typical; fewer is fine.
+Each question carries its register ID (OQ-001 …, from `docs/comprehension/owner-questions.md`), one sentence of context and the question, and is traceable to §4 or §2. A revision lists only the Open ones; answered questions appear in the semantic diff. Name the owner ("Questions only Sam can answer", "Questions for the client"). Order by how much of the system each answer unblocks. Ten to fifteen is typical; fewer is fine.
 
 When the product owner and the operator differ (a client owns the rules and you run the servers; an upstream team owns a port), split the section into `5.1 For <product owner>` and `5.2 For <operator>`, numbering straight through, so each list can go to the person who answers it.
 
@@ -120,3 +123,20 @@ The blank line after `</summary>` matters: without it GitHub doesn't render the 
 ## 10. Next steps
 
 One opening sentence that names the single biggest lever. Then an ordered list of what to do, each item tied to a §2 surprise or a §5 question. Estimates, if any, in attended hours.
+
+---
+
+## Owner-questions register
+
+`docs/comprehension/owner-questions.md`, the only source of OQ IDs for the repository. One row per question ever asked; rows are never deleted.
+
+```markdown
+# Owner questions: <system>
+
+| ID | Question | First asked (pack date) | Status | Effect on the pack |
+|---|---|---|---|---|
+| OQ-001 | What happens to a confirmed item when ... ? | 2026-10-21 | Open | |
+| OQ-004 | How long should an invitation stay valid? | 2026-10-21 | Answered 2026-11-02 by <owner>: 90 days | §4 `InvitationExpiry` source now Owner's decision |
+```
+
+Status: Open · Answered (date, who, the answer) · Superseded by OQ-nnn · Withdrawn (date, why).

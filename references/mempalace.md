@@ -44,7 +44,7 @@ Contract clauses nothing enforces (<n>): <the top two>.
 
 Rules decided by Claude, not the owner: <list>.
 
-Open owner questions (<n>): <the top three, one line each>.
+Open owner questions (<n>): <the top three, one line each, with their OQ IDs>.
 
 In flight: <branches and PRs that change the picture, one line each>.
 

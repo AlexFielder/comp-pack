@@ -86,9 +86,25 @@ Leave the pack **uncommitted** unless the owner says otherwise: the owner reads 
 
 Read [references/mempalace.md](references/mempalace.md). In short: the scheduled mine already chunks the full pack into the repository's wing, so you add one curated **"start here"** drawer in room `comprehension` with the facts a future session needs first. Skip this step if you don't use [MemPalace](references/mempalace.md). If `add_drawer` says "peer MCP writer active", a mine holds the palace lock: draft the drawer, wait for the mine to finish and retry.
 
-### 7. Report
+### 7. Publish a phone reading view
 
-Give the owner: the pack's path, the five surprises in one line each, the wired, saved and effects results, the number of contract clauses nothing enforces, the number of owner questions, the top lines of the semantic diff for a revision, and what to read first. Then offer an explain-back session.
+Owners often read the pack away from the code, on a phone, where wide Markdown tables are hard to follow. After the checker passes, render the pack as a page and publish it as a private Artifact:
+
+```bash
+python ~/.claude/skills/comp-pack/scripts/build_pack_page.py docs/comprehension/<pack>.md <scratchpad>/<repo>-comp-pack-<yyyy-mm-dd>.html
+```
+
+- The Markdown pack stays the master copy, and stays uncommitted; the page is only a view of it. Write the HTML to the session's scratchpad, never into the repository.
+- The page shows surprise cards, quiz questions that open on tap, tables that become labelled cards below 680 px, count tiles and a contents drawer, in light and dark themes. Raw HTML in the pack shows as text, apart from the `<br>`, `<details>` and `<summary>` the template uses.
+- The script rewrites every reference to a GitHub link pinned to the commit in the pack's header, so links work away from the checkout, and prints how many it rewrote. If it finds no GitHub remote, pass `--repo-url`. Links to files that the commit doesn't hold yet (the pack itself, `owner-questions.md`) show GitHub's 404 page until someone pushes them.
+- Check the printed counts (surprises, rules, owner questions, quiz questions) against the pack before publishing.
+- **Restricted packs:** the script warns when the pack has a restriction line. Ask the owner before publishing such a pack, and never publish one whose restriction rules out hosting outside the repository.
+- Publish with the Artifact tool (icon `book`, and a one-sentence description naming the repository and the date). Keep it private: never share it or change its sharing. Give the owner the link with the step 8 report. Without an Artifact tool, hand over the HTML file instead: it opens in any browser, though Mermaid diagrams then show as source text.
+- The script needs Python-Markdown (`pip install markdown`). Don't run it with `-I`: that flag hides user-installed packages.
+
+### 8. Report
+
+Give the owner: the pack's path, the phone view's link, the five surprises in one line each, the wired, saved and effects results, the number of contract clauses nothing enforces, the number of owner questions, the top lines of the semantic diff for a revision, and what to read first. Then offer an explain-back session.
 
 ## The reference contract
 
@@ -152,3 +168,4 @@ A typical case: a client's codebase that must never reach a clean-room rebuild o
 - [ ] Abbreviations expanded on first use; dates ISO; no passive or "would be" hedges.
 - [ ] Self-quiz answers in `<details>` with a blank line after `</summary>`, each citing evidence.
 - [ ] Pack left uncommitted; MemPalace start-here drawer filed; restriction line present if one applies.
+- [ ] Phone view published (or the HTML handed over), its counts checked and its links rewritten; a restricted pack only with the owner's yes.

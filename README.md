@@ -47,18 +47,25 @@ The build launches three or four parallel reader subagents, so a pack for a mid-
 
 | File | Purpose |
 |---|---|
-| [SKILL.md](SKILL.md) | The workflow: survey, readers, the two checks, verification, writing, reporting |
+| [SKILL.md](SKILL.md) | The workflow: survey, readers, the checks, verification, writing, the phone reading view, reporting |
 | [references/pack-template.md](references/pack-template.md) | The ten sections of a pack, in order |
 | [references/reader-briefs.md](references/reader-briefs.md) | How to split the reading and the brief each reader subagent gets |
 | [references/reference-format.md](references/reference-format.md) | The link contract that makes every citation clickable in GitHub, VS Code and the Claude desktop app |
 | [references/explain-back.md](references/explain-back.md) | Quiz and walk-through sessions, scoring and the session record |
 | [references/mempalace.md](references/mempalace.md) | Optional: filing a "start here" drawer into [MemPalace](https://github.com/MemPalace/mempalace) |
 | [scripts/check_refs.py](scripts/check_refs.py) | Checks every link in a pack: bad targets, missing files, line numbers past the end of a file |
+| [scripts/build_pack_page.py](scripts/build_pack_page.py) | Renders a pack as a phone-friendly page (surprise cards, tap-to-open quiz, tables that reflow into cards, light and dark themes), with every reference rewritten to a GitHub link pinned to the pack's commit |
 
 `check_refs.py` needs only Python 3:
 
 ```bash
 python ~/.claude/skills/comp-pack/scripts/check_refs.py --show docs/comprehension/<pack>.md
+```
+
+`build_pack_page.py` also needs Python-Markdown (`pip install markdown`). The skill publishes its page as a private Claude Artifact; anywhere else, open the HTML file in a browser:
+
+```bash
+python ~/.claude/skills/comp-pack/scripts/build_pack_page.py docs/comprehension/<pack>.md pack.html
 ```
 
 ## Licence
